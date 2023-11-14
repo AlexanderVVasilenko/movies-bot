@@ -105,7 +105,7 @@ async def save_high_amount(message: Message, state: FSMContext) -> None:
         await state.clear()
     else:
         await message.answer("Please specify your request.", parse_mode="HTML")
-        await state.set_state(Low.title)
+        await state.set_state(High.title)
 
 
 async def main() -> None:
