@@ -10,7 +10,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from site_API.core import get_low
+from site_API.core import get_low, get_high
 from tg_API.utils.config import Low, High, Custom
 
 load_dotenv()
@@ -58,11 +58,53 @@ async def save_low_amount(message: Message, state: FSMContext) -> None:
     answers = get_low(data["title"], int(message.text))
     if answers:
         for movie in answers:
-            await message.answer(str(movie))
+            printed_movie = str()
+            for key, value in movie.items():
+                if key != "Ratings":
+                    printed_movie += f"<b>{key}</b>: {value}\n"
+            await message.answer(printed_movie)
         await message.answer("The end.")
         await state.clear()
     else:
-        await message.answer("Please specify your request.")
+        await message.answer("Please specify your request.", parse_mode="HTML")
+        await state.set_state(Low.title)
+
+
+@dp.message(Command("high"))
+async def command_high(message: Message, state: FSMContext) -> None:
+    await state.set_state(Low.title)
+    await message.answer("Enter title for search.",
+                         reply_markup=ReplyKeyboardRemove())
+
+
+@dp.message(High.title)
+async def save_high_title(message: Message, state: FSMContext) -> None:
+    await state.update_data(title=message.text)
+    await state.set_state(High.amount)
+    await message.answer("Enter the amount of responses.")
+
+
+@dp.message(High.amount)
+async def save_high_amount(message: Message, state: FSMContext) -> None:
+    if not message.text.isdigit():
+        await message.answer("Something went wrong. Try again.")
+        return
+    elif int(message.text) < 1:
+        await message.answer("Amount of responses should be higher than 1.")
+        return
+    data = await state.get_data()
+    answers = get_high(data["title"], int(message.text))
+    if answers:
+        for movie in answers:
+            printed_movie = str()
+            for key, value in movie.items():
+                if key != "Ratings":
+                    printed_movie += f"<b>{key}</b>: {value}\n"
+            await message.answer(printed_movie)
+        await message.answer("The end.")
+        await state.clear()
+    else:
+        await message.answer("Please specify your request.", parse_mode="HTML")
         await state.set_state(Low.title)
 
 

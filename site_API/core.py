@@ -21,7 +21,7 @@ def get_movie_info(movie):
         return None
 
 
-def get_low(text: str, amount: int) -> list:
+def _get_full_info_by_search(text: str) -> list:
     movies = []
     page_cnt = 0
     page_amt = int(site_api.get_by_search()(title=text).json()["totalResults"])
@@ -40,10 +40,23 @@ def get_low(text: str, amount: int) -> list:
 
     print(len(movie_info_list))
     print(movie_info_list)
-    sorted_by_rating = sorted(filter(None, movie_info_list), key=sorting_func)
-    print(len(sorted_by_rating))
+    return movie_info_list
+    # sorted_by_rating = sorted(filter(None, movie_info_list), key=sorting_func)
+    # print(len(sorted_by_rating))
+    # return sorted_by_rating[:amount]
+
+
+def get_low(title: str, amount: int) -> list:
+    movies_full_info = _get_full_info_by_search(title)
+    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func)
     return sorted_by_rating[:amount]
 
+
+def get_high(title: str, amount: int) -> list:
+    movies_full_info = _get_full_info_by_search(title)
+    sorted_by_rating = sorted(filter(None, movies_full_info),
+                              key=sorting_func, reverse=True)
+    return sorted_by_rating[:amount]
 
 # def get_low(text: str, amount: int) -> list:
 #     movies = []
