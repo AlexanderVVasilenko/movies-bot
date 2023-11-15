@@ -8,8 +8,8 @@ querystring = {"s": "Avengers Endgame", "r": "json", "page": "1"}
 site_api = SiteApiInterface()
 
 
-def sorting_func(movie: dict) -> float:
-    return float(movie["imdbRating"])
+def sorting_func(movies: dict) -> float:
+    return float(movies["imdbRating"])
 
 
 def get_movie_info(movie):
@@ -57,6 +57,23 @@ def get_high(title: str, amount: int) -> list:
     sorted_by_rating = sorted(filter(None, movies_full_info),
                               key=sorting_func, reverse=True)
     return sorted_by_rating[:amount]
+
+
+def get_custom(title: str, min_rating: float, max_rating: float, amount: int) -> list:
+    movies_full_info = _get_full_info_by_search(title)
+    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func, reverse=True)
+    index_max = 0
+    index_min = len(sorted_by_rating)
+    for index, movie in enumerate(sorted_by_rating):
+        if float(movie["imdbRating"]) <= max_rating:
+            index_max = index
+            break
+    for index in range(len(sorted_by_rating) - 1, -1, -1):
+        if sorted_by_rating[index]["imdbRating"] >= min_rating:
+            index_min = index
+    result = sorted_by_rating[index_max:index_min]
+    return result[:amount]
+
 
 # def get_low(text: str, amount: int) -> list:
 #     movies = []

@@ -25,9 +25,3 @@ class CRUDInterface:
     @classmethod
     def retrieve(cls):
         return _retrieve_all_data
-
-
-if __name__ == '__main__':
-    _store_data()
-    _retrieve_all_data()
-    CRUDInterface()
