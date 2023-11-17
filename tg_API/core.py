@@ -1,15 +1,19 @@
 import asyncio
 import logging
 import sys
+from datetime import date
 from os import getenv
 
-from aiogram.fsm.context import FSMContext
-from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove
+from dotenv import load_dotenv
+from peewee import IntegrityError
 
+from database.common.models import User, db, History
+from database.core import crud
 from site_API.core import get_low, get_high, get_custom
 from tg_API.utils.config import Low, High, Custom
 
@@ -20,6 +24,27 @@ TOKEN = getenv("BOT_TOKEN")
 
 # All handlers should be attached to the Router (or Dispatcher)
 dp = Dispatcher()
+
+
+@dp.message(Command("start"))
+async def command_start(message: Message) -> None:
+    user_id = message.from_user.id
+    username = message.from_user.username
+    first_name = message.from_user.first_name
+    last_name = message.from_user.last_name
+
+    try:
+        User.create(
+            user_id=user_id,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        await message.answer("Welcome to movies database!")
+    except IntegrityError:
+        await message.answer(f"Glad to see you again, {first_name}!")
+
+
 
 
 @dp.message(Command("helloworld"))
@@ -34,6 +59,11 @@ async def send_hi(message: Message) -> None:
 
 @dp.message(Command("low"))
 async def command_low(message: Message, state: FSMContext) -> None:
+    user_id = message.from_user.id
+    user = User.get_or_none(User.user_id == user_id)
+    if user is None:
+        await message.answer("You are not registered. Write /start")
+        return
     await state.set_state(Low.title)
     await message.answer("Enter title for search.",
                          reply_markup=ReplyKeyboardRemove())
@@ -56,12 +86,17 @@ async def save_low_amount(message: Message, state: FSMContext) -> None:
         return
     data = await state.get_data()
     answers = get_low(data["title"], int(message.text))
+    user = User.get_or_none(User.user_id == message.from_user.id)
+    db_data = list()
     if answers:
         for movie in answers:
             printed_movie = str()
             for key, value in movie.items():
                 if key != "Ratings":
                     printed_movie += f"<b>{key}</b>: {value}\n"
+            db_data.append({"movie": printed_movie, "user": user, "date": date.today()})
+            storing = crud.store()
+            storing(db, History, db_data)
             await message.answer(printed_movie)
         await message.answer("The end.")
         await state.clear()
@@ -72,6 +107,11 @@ async def save_low_amount(message: Message, state: FSMContext) -> None:
 
 @dp.message(Command("high"))
 async def command_high(message: Message, state: FSMContext) -> None:
+    user_id = message.from_user.id
+    user = User.get_or_none(User.user_id == user_id)
+    if user is None:
+        await message.answer("You are not registered. Write /start")
+        return
     await state.set_state(Low.title)
     await message.answer("Enter title for search.",
                          reply_markup=ReplyKeyboardRemove())
@@ -94,12 +134,17 @@ async def save_high_amount(message: Message, state: FSMContext) -> None:
         return
     data = await state.get_data()
     answers = get_high(data["title"], int(message.text))
+    user = User.get_or_none(User.user_id == message.from_user.id)
+    db_data = list()
     if answers:
         for movie in answers:
             printed_movie = str()
             for key, value in movie.items():
                 if key != "Ratings":
                     printed_movie += f"<b>{key}</b>: {value}\n"
+            db_data.append({"movie": printed_movie, "user": user, "date": date.today()})
+            storing = crud.store()
+            storing(db, History, db_data)
             await message.answer(printed_movie)
         await message.answer("The end.")
         await state.clear()
@@ -110,6 +155,11 @@ async def save_high_amount(message: Message, state: FSMContext) -> None:
 
 @dp.message(Command("custom"))
 async def command_custom(message: Message, state: FSMContext) -> None:
+    user_id = message.from_user.id
+    user = User.get_or_none(User.user_id == user_id)
+    if user is None:
+        await message.answer("You are not registered. Write /start")
+        return
     await state.set_state(Custom.title)
     await message.answer("Enter title for search.",
                          reply_markup=ReplyKeyboardRemove())
@@ -162,12 +212,17 @@ async def save_custom_amount(message: Message, state: FSMContext) -> None:
         return
     data = await state.get_data()
     answers = get_custom(data["title"], data["min"], data["max"], int(message.text))
+    user = User.get_or_none(User.user_id == message.from_user.id)
+    db_data = list()
     if answers:
         for movie in answers:
             printed_movie = str()
             for key, value in movie.items():
                 if key != "Ratings":
                     printed_movie += f"<b>{key}</b>: {value}\n"
+            db_data.append({"movie": printed_movie, "user": user, "date": date.today()})
+            storing = crud.store()
+            storing(db, History, db_data)
             await message.answer(printed_movie)
         await message.answer("The end.")
         await state.clear()
@@ -177,7 +232,16 @@ async def save_custom_amount(message: Message, state: FSMContext) -> None:
 
 
 @dp.message(Command("history"))
-
+async def history(message: Message) -> None:
+    user_id = message.from_user.id
+    user = User.get_or_none(User.user_id == user_id)
+    if user is None:
+        await message.answer("You are not registered. Write /start")
+        return
+    user_history: list[History] = user.history.order_by(-History.date)
+    result = [record.movie for record in user_history]
+    for title in result:
+        await message.answer(title, parse_mode="html")
 
 
 async def main() -> None:

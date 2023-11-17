@@ -1,11 +1,11 @@
-from typing import Dict, List, Any
+from typing import Any
 
 from peewee import ModelSelect
 
 from database.common.models import db, ModelBase
 
 
-def _store_data(dbase: db, model: Any, *data: List[Dict]) -> None:
+def _store_data(dbase: db, model: Any, *data: list[dict]) -> None:
     with dbase.atomic():
         model.insert_many(*data).execute()
 

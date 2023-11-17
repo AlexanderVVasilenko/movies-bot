@@ -12,7 +12,20 @@ class ModelBase(pw.Model):
         database = db
 
 
+class User(ModelBase):
+    user_id = pw.IntegerField(primary_key=True)
+    username = pw.CharField()
+    first_name = pw.CharField()
+    last_name = pw.CharField(null=True)
+
+
 class History(ModelBase):
-    number = pw.TextField()
-    message = pw.TextField()
+    movie = pw.TextField()
+    user = pw.ForeignKeyField(User, backref="history")
+    date = pw.DateField()
+
+
+
+
+
 
