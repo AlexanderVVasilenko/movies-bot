@@ -2,7 +2,7 @@ from typing import Any
 
 from peewee import ModelSelect
 
-from database.common.models import db, ModelBase
+from database.common.models import db, BaseModel
 
 
 def _store_data(dbase: db, model: Any, *data: list[dict]) -> None:
@@ -10,7 +10,7 @@ def _store_data(dbase: db, model: Any, *data: list[dict]) -> None:
         model.insert_many(*data).execute()
 
 
-def _retrieve_all_data(dbase: db, model: "", *columns: ModelBase) -> ModelSelect:
+def _retrieve_all_data(dbase: db, model: "", *columns: BaseModel) -> ModelSelect:
     with dbase.atomic():
         respond = model.select(*columns)
 

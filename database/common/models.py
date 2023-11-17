@@ -1,31 +1,24 @@
 from datetime import datetime
-
 import peewee as pw
 
 db = pw.SqliteDatabase("movies.db")
 
 
-class ModelBase(pw.Model):
+class BaseModel(pw.Model):
     created_at = pw.DateField(default=datetime.now())
 
     class Meta:
         database = db
 
 
-class User(ModelBase):
+class User(BaseModel):
     user_id = pw.IntegerField(primary_key=True)
     username = pw.CharField()
     first_name = pw.CharField()
     last_name = pw.CharField(null=True)
 
 
-class History(ModelBase):
+class History(BaseModel):
     movie = pw.TextField()
     user = pw.ForeignKeyField(User, backref="history")
     date = pw.DateField()
-
-
-
-
-
-
