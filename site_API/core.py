@@ -1,5 +1,5 @@
 import concurrent.futures
-import functools
+from typing import Optional
 
 from site_API.utils.site_api_handler import SiteApiInterface
 
@@ -8,25 +8,23 @@ querystring = {"s": "Avengers Endgame", "r": "json", "page": "1"}
 site_api = SiteApiInterface()
 
 
-def sorting_func(movies: dict) -> float:
-    return float(movies["imdbRating"])
+def sorting_func(movie: dict) -> float:
+    return float(movie["imdbRating"])
 
 
-def get_movie_info(movie):
+def get_movie_info(movie: dict) -> Optional[dict]:
     imdb_id = movie["imdbID"]
     movie_info = site_api.get_by_id()(imdb_id)
-    if movie_info["imdbRating"] != "N/A":
-        return movie_info
-    else:
-        return None
+    return movie_info if movie_info["imdbRating"] != "N/A" else None
 
 
-def _get_full_info_by_search(text: str) -> list:
+def _get_full_info_by_search(text: str) -> list[dict]:
     movies = []
     page_cnt = 0
     page_amt = int(site_api.get_by_search()(title=text).json()["totalResults"])
     if page_amt > 1000:
         return []
+
     while True:
         page_cnt += 1
         respond = site_api.get_by_search()(title=text, page=page_cnt).json()
@@ -38,61 +36,34 @@ def _get_full_info_by_search(text: str) -> list:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         movie_info_list = list(executor.map(get_movie_info, movies))
 
-    print(len(movie_info_list))
-    print(movie_info_list)
-    return movie_info_list
-    # sorted_by_rating = sorted(filter(None, movie_info_list), key=sorting_func)
-    # print(len(sorted_by_rating))
-    # return sorted_by_rating[:amount]
+    return [movie_info for movie_info in movie_info_list if movie_info is not None]
 
 
-def get_low(title: str, amount: int) -> list:
+def get_movies_sorted_by_rating(title: str, amount: int, reverse: bool = False) -> list[dict]:
     movies_full_info = _get_full_info_by_search(title)
-    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func)
+    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func, reverse=reverse)
     return sorted_by_rating[:amount]
 
 
-def get_high(title: str, amount: int) -> list:
-    movies_full_info = _get_full_info_by_search(title)
-    sorted_by_rating = sorted(filter(None, movies_full_info),
-                              key=sorting_func, reverse=True)
-    return sorted_by_rating[:amount]
+def get_low(title: str, amount: int) -> list[dict]:
+    return get_movies_sorted_by_rating(title, amount)
 
 
-def get_custom(title: str, min_rating: float, max_rating: float, amount: int) -> list:
+def get_high(title: str, amount: int) -> list[dict]:
+    return get_movies_sorted_by_rating(title, amount, reverse=True)
+
+
+def get_custom(title: str, min_rating: float, max_rating: float, amount: int) -> list[dict]:
     movies_full_info = _get_full_info_by_search(title)
     sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func, reverse=True)
-    index_max = 0
-    index_min = len(sorted_by_rating)
-    for index, movie in enumerate(sorted_by_rating):
-        if float(movie["imdbRating"]) <= max_rating:
-            index_max = index
-            break
-    for index in range(len(sorted_by_rating) - 1, -1, -1):
-        if sorted_by_rating[index]["imdbRating"] >= min_rating:
-            index_min = index
+
+    index_max = next(
+        (index for index, movie in enumerate(sorted_by_rating) if float(movie["imdbRating"]) <= max_rating), 0)
+    index_min = next((index for index in range(len(sorted_by_rating) - 1, -1, -1) if
+                      float(sorted_by_rating[index]["imdbRating"]) >= min_rating), len(sorted_by_rating))
+
     result = sorted_by_rating[index_max:index_min]
     return result[:amount]
-
-
-# def get_low(text: str, amount: int) -> list:
-#     movies = []
-#     page_cnt = 0
-#     while True:
-#         page_cnt += 1
-#         respond = site_api.get_by_search()(title=text, page=page_cnt).json()
-#         if respond["Response"] == "True":
-#             movies += respond["Search"]
-#         else:
-#             break
-#
-#     full_info_movies = [site_api.get_by_id()(movie["imdbID"]).json()
-#                         for movie in movies
-#                         if site_api.get_by_id()(movie["imdbID"]).json()[
-#                             "Metascore"] != "N/A"]
-#
-#     sorted_by_rating = sorted(full_info_movies, key=sorting_func)
-#     return sorted_by_rating[:amount]
 
 
 if __name__ == '__main__':
