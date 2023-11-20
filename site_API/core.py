@@ -21,7 +21,8 @@ def get_movie_info(movie: dict) -> Optional[dict]:
 def _get_full_info_by_search(text: str) -> list[dict]:
     movies = []
     page_cnt = 0
-    page_amt = int(site_api.get_by_search()(title=text).json()["totalResults"])
+    print(site_api.get_by_search()(title=text).json())
+    page_amt = int(site_api.get_by_search()(title=text).json().get("totalResults"))
     if page_amt > 1000:
         return []
 
