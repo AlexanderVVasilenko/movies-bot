@@ -1,33 +1,24 @@
-from typing import Dict, List, Any
+from peewee import Model, ModelSelect
 
-from peewee import ModelSelect
-
-from database.common.models import db, ModelBase
+from database.common.models import db, BaseModel
 
 
-def _store_data(dbase: db, model: Any, *data: List[Dict]) -> None:
+def store_data(dbase: db, model: Model, *data: list[dict]) -> None:
     with dbase.atomic():
         model.insert_many(*data).execute()
 
 
-def _retrieve_all_data(dbase: db, model: "", *columns: ModelBase) -> ModelSelect:
+def retrieve_all_data(dbase: db, model: Model, *columns: BaseModel) -> ModelSelect:
     with dbase.atomic():
         respond = model.select(*columns)
-
     return respond
 
 
 class CRUDInterface:
-    @classmethod
-    def store(cls):
-        return _store_data
+    @staticmethod
+    def store():
+        return store_data
 
-    @classmethod
-    def retrieve(cls):
-        return _retrieve_all_data
-
-
-if __name__ == '__main__':
-    _store_data()
-    _retrieve_all_data()
-    CRUDInterface()
+    @staticmethod
+    def retrieve():
+        return retrieve_all_data
