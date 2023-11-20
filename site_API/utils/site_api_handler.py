@@ -1,12 +1,12 @@
 import json
 from time import sleep
 
-import redis
+
 from requests import Response, get
 
-from settings import SiteSettings
+from settings import SiteSettings, redis_client
 
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
 site = SiteSettings()
 
 URL = "https://movie-database-alternative.p.rapidapi.com/"
@@ -44,8 +44,7 @@ def get_by_id(imdb_id: str, timeout=5, year: int = None, t_type: str = None, plo
     if cached_response:
         return json.loads(cached_response.decode("utf-8"))
 
-    if year:
-        year = str(year)
+    year = str(year) if year else None
 
     query_params = {"r": "json", "i": imdb_id, "y": year, "type": t_type, "plot": plot}
 

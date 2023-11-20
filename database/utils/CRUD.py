@@ -1,10 +1,9 @@
-from typing import Any
 from peewee import Model, ModelSelect
 
 from database.common.models import db, BaseModel
 
 
-def store_data(dbase: db, model: Any, *data: list[dict]) -> None:
+def store_data(dbase: db, model: Model, *data: list[dict]) -> None:
     with dbase.atomic():
         model.insert_many(*data).execute()
 

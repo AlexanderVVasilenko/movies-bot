@@ -40,18 +40,20 @@ def _get_full_info_by_search(text: str) -> list[dict]:
     return [movie_info for movie_info in movie_info_list if movie_info is not None]
 
 
-def get_movies_sorted_by_rating(title: str, amount: int, reverse: bool = False) -> list[dict]:
+def get_movies_sorted_by_rating(title: str, amount: int, is_reversed: bool) -> list[dict]:
     movies_full_info = _get_full_info_by_search(title)
-    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func, reverse=reverse)
+    print(movies_full_info)
+    sorted_by_rating = sorted(filter(None, movies_full_info), key=sorting_func, reverse=is_reversed)
+    print(sorted_by_rating)
     return sorted_by_rating[:amount]
 
 
 def get_low(title: str, amount: int) -> list[dict]:
-    return get_movies_sorted_by_rating(title, amount)
+    return get_movies_sorted_by_rating(title, amount, False)
 
 
 def get_high(title: str, amount: int) -> list[dict]:
-    return get_movies_sorted_by_rating(title, amount, reverse=True)
+    return get_movies_sorted_by_rating(title, amount, True)
 
 
 def get_custom(title: str, min_rating: float, max_rating: float, amount: int) -> list[dict]:

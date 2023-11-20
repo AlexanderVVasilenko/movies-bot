@@ -45,8 +45,6 @@ async def command_start(message: Message) -> None:
         await message.answer(f"Glad to see you again, {first_name}!")
 
 
-
-
 @dp.message(Command("helloworld"))
 async def command_helloworld(message: Message) -> None:
     await message.answer(f"Hello, world!")
@@ -112,7 +110,7 @@ async def command_high(message: Message, state: FSMContext) -> None:
     if user is None:
         await message.answer("You are not registered. Write /start")
         return
-    await state.set_state(Low.title)
+    await state.set_state(High.title)
     await message.answer("Enter title for search.",
                          reply_markup=ReplyKeyboardRemove())
 
